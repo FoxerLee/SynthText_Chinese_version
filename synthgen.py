@@ -215,7 +215,7 @@ def get_text_placement_mask(xyz,mask,plane,pad=2,viz=False):
     REGION : DICT output of TextRegions.get_regions
     PAD : number of pixels to pad the placement-mask by
     """
-    contour,hier = cv2.findContours(mask.copy().astype('uint8'),
+    _,contour,hier = cv2.findContours(mask.copy().astype('uint8'),
                                     mode=cv2.RETR_CCOMP,
                                     method=cv2.CHAIN_APPROX_SIMPLE)
     contour = [np.squeeze(c).astype('float') for c in contour]
@@ -236,7 +236,7 @@ def get_text_placement_mask(xyz,mask,plane,pad=2,viz=False):
 
     # unrotate in 2D plane:
     rect = cv2.minAreaRect(pts_fp[0].copy().astype('float32'))
-    box = np.array(cv2.BoxPoints(rect))
+    box = np.array(cv2.boxPoints(rect))
     R2d = su.unrotate2d(box.copy())
     box = np.vstack([box,box[0,:]]) #close the box for visualization
 
@@ -256,11 +256,12 @@ def get_text_placement_mask(xyz,mask,plane,pad=2,viz=False):
     ROW = np.max(ssd.pdist(np.atleast_2d(boxR[:,0]).T))
     COL = np.max(ssd.pdist(np.atleast_2d(boxR[:,1]).T))
 
-    place_mask = 255*np.ones((np.ceil(COL)+pad,np.ceil(ROW)+pad),'uint8')
+    #place_mask = 255*np.ones((np.ceil(COL)+pad,int(np.ceil(ROW))+pad),'uint8')
+    place_mask = 255*np.ones((int(np.ceil(COL))+pad,int(np.ceil(ROW))+pad),'uint8')
 
     pts_fp_i32 = [(pts_fp[i]+minxy[None,:]).astype('int32') for i in xrange(len(pts_fp))]
     cv2.drawContours(place_mask,pts_fp_i32,-1,0,
-                     thickness=cv2.CV_FILLED,
+                     thickness=cv2.FILLED,
                      lineType=8,hierarchy=hier)
     
     if not TextRegions.filter_rectified((~place_mask).astype('float')/255):
@@ -563,7 +564,7 @@ class RendererV3(object):
             # change shape from 2x4xn_i -> (4*n_i)x2
             cc = np.squeeze(np.concatenate(np.dsplit(cc,cc.shape[-1]),axis=1)).T.astype('float32')
             rect = cv2.minAreaRect(cc.copy())
-            box = np.array(cv2.BoxPoints(rect))
+            box = np.array(cv2.boxPoints(rect))
 
             # find the permutation of box-coordinates which
             # are "aligned" appropriately with the character-bb.
